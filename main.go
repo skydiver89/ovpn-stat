@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,18 +66,43 @@ func mainPage(c *gin.Context) {
 	}
 	scanner := bufio.NewScanner(strings.NewReader(string(content)))
 
+	type timeInterval struct {
+		start time.Time
+		end   time.Time
+	}
+	stat := make(map[string][]timeInterval)
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "Peer Connection Initiated") {
-			fmt.Println(line)
+			startTime, user, err := parseLogLine(line)
+			if err != nil {
+				continue
+			}
+			stat[user] = append(stat[user], timeInterval{startTime, time.Time{}})
 		}
 		if strings.Contains(line, "SIGUSR1") {
-			fmt.Println(line)
+			endTime, user, err := parseLogLine(line)
+			if err != nil {
+				continue
+			}
+			_, hasUser := stat[user]
+			if !hasUser {
+				continue
+			}
+			stat[user][len(stat[user])-1].end = endTime
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
 		log.Fatalln("Error:", err)
+	}
+
+	for user := range stat {
+		fmt.Println(user)
+		for i := range stat[user] {
+			fmt.Println(stat[user][i].start, stat[user][i].end)
+		}
 	}
 	/*
 		c.HTML(http.StatusOK, "main.html", gin.H{
