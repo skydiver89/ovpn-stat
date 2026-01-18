@@ -11,7 +11,8 @@ type Config struct {
 }
 
 type Server struct {
-	Log string `yaml:"log"`
+	Log  string `yaml:"log"`
+	Port string `yaml:"port"`
 }
 
 func (c *Config) load(fname string) error {

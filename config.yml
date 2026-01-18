@@ -1,2 +1,4 @@
 server:
   log: server.log
+  port: 8888
+  

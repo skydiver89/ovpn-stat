@@ -18,11 +18,10 @@ var BUILDTIME = ""
 
 var configFile = "config.yml"
 var config Config
-var port string = "8888"
 
 func parseFlags() {
 	flag.Usage = func() {
-		fmt.Printf("Usage: %s [-c configFile] [-p port] [-h] [-v]\n", os.Args[0])
+		fmt.Printf("Usage: %s [-c configFile] [-h] [-v]\n", os.Args[0])
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
@@ -31,7 +30,6 @@ func parseFlags() {
 	var showVersion bool
 	flag.BoolVar(&showVersion, "v", false, "Show version information")
 	flag.StringVar(&configFile, "c", "config.yml", "Path to config file")
-	flag.StringVar(&port, "p", "8888", "Port to serve")
 	flag.Parse()
 	if showHelp {
 		flag.Usage()
@@ -56,7 +54,7 @@ func main() {
 	router.Static("/images", "./images")
 	router.StaticFile("/favicon.ico", "./images/favicon.ico")
 	router.GET("/", mainPage)
-	router.Run("0.0.0.0:" + port)
+	router.Run("0.0.0.0:" + config.Server.Port)
 }
 
 func mainPage(c *gin.Context) {
