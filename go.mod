@@ -1,4 +1,4 @@
-module ovpn-monitor
+module ovpn-stat
 
 go 1.23.4
 
