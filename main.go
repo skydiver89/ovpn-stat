@@ -1,13 +1,10 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -54,54 +51,15 @@ func main() {
 	router.Static("/images", "./images")
 	router.StaticFile("/favicon.ico", "./images/favicon.ico")
 	router.GET("/", mainPage)
-	router.Run("0.0.0.0:" + config.Server.Port)
+	err = router.Run("0.0.0.0:" + config.Server.Port)
+	if err != nil {
+		log.Fatalln("Cant run server", err)
+	}
 }
 
 func mainPage(c *gin.Context) {
-	content, err := os.ReadFile(config.Server.Log)
-	if err != nil {
-		log.Fatalf("unable to read file: %v", err)
-	}
-	scanner := bufio.NewScanner(strings.NewReader(string(content)))
-
-	type timeInterval struct {
-		start time.Time
-		end   time.Time
-	}
-	stat := make(map[string][]timeInterval)
-
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "Peer Connection Initiated") {
-			startTime, user, err := parseLogLine(line)
-			if err != nil {
-				continue
-			}
-			stat[user] = append(stat[user], timeInterval{startTime, time.Time{}})
-		}
-		if strings.Contains(line, "SIGUSR1") {
-			endTime, user, err := parseLogLine(line)
-			if err != nil {
-				continue
-			}
-			_, hasUser := stat[user]
-			if !hasUser {
-				continue
-			}
-			stat[user][len(stat[user])-1].end = endTime
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatalln("Error:", err)
-	}
-
-	for user := range stat {
-		fmt.Println(user)
-		for i := range stat[user] {
-			fmt.Println(stat[user][i].start, stat[user][i].end)
-		}
-	}
+	stat := readStat()
+	fmt.Println(stat)
 	/*
 		c.HTML(http.StatusOK, "main.html", gin.H{
 			"currentyear": curYear,
