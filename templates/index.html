@@ -169,6 +169,43 @@
             text-align: center;
         }
 
+        .session-item.hidden {
+            display: none;
+        }
+
+        .expand-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .expand-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .expand-button:active {
+            transform: translateY(0);
+        }
+
+        .header-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5));
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -204,39 +241,46 @@
 <body>
     <div class="container">
         <header>
-            <h1>🔒 OpenVPN Statistics</h1>
+            <img src="/images/favicon.ico" alt="OpenVPN" class="header-icon">
+            <h1>OpenVPN Statistics</h1>
             <p class="subtitle">Мониторинг подключений пользователей</p>
         </header>
 
         {{if .Stats}}
         <div class="stats-grid">
             {{range $user, $sessions := .Stats}}
-            <div class="user-card {{if $sessions.HasActive}}active{{end}}">
+            <div class="user-card {{if $sessions.HasActive}}active{{end}}" data-user="{{$user}}">
                 <div class="user-header">
                     <div class="username">{{$user}}</div>
                     <div class="status-badge {{if $sessions.HasActive}}connected{{else}}disconnected{{end}}">
                         {{if $sessions.HasActive}}Подключён{{else}}Отключён{{end}}
                     </div>
                 </div>
-                <ul class="session-list">
-                    {{range $sessions.Intervals}}
-                    <li class="session-item {{if .IsActive}}active{{end}}">
+                <ul class="session-list" data-user="{{$user}}" data-total="{{len $sessions.Intervals}}">
+                    {{range $index, $interval := $sessions.Intervals}}
+                    <li class="session-item {{if $interval.IsActive}}active{{end}}" data-index="{{$index}}">
                         <div class="session-time">
                             <span class="time-label">Начало:</span>
-                            <span class="time-value">{{.StartFormatted}}</span>
+                            <span class="time-value">{{$interval.StartFormatted}}</span>
                         </div>
                         <div class="session-time">
                             <span class="time-label">Конец:</span>
-                            <span class="time-value">{{if .IsActive}}В процессе...{{else}}{{.EndFormatted}}{{end}}</span>
+                            <span class="time-value">{{if $interval.IsActive}}В процессе...{{else}}{{$interval.EndFormatted}}{{end}}</span>
                         </div>
                         <div class="session-time">
                             <span class="time-label">Длительность:</span>
-                            <span class="duration">{{.Duration}}</span>
+                            <span class="duration">{{$interval.Duration}}</span>
                         </div>
                     </li>
                     {{end}}
                 </ul>
-                <div class="session-count">Всего сессий: {{len $sessions.Intervals}}</div>
+                {{$totalSessions := len $sessions.Intervals}}
+                {{if gt $totalSessions 5}}
+                <button class="expand-button" onclick="toggleSessions('{{$user}}', {{$totalSessions}})" data-user="{{$user}}">
+                    Показать все сессии ({{$totalSessions}})
+                </button>
+                {{end}}
+                <div class="session-count">Всего сессий: {{$totalSessions}}</div>
             </div>
             {{end}}
         </div>
@@ -251,5 +295,47 @@
             Обновите страницу для получения актуальных данных
         </div>
     </div>
+
+    <script>
+        function toggleSessions(user, totalSessions) {
+            const sessionList = document.querySelector(`.session-list[data-user="${user}"]`);
+            const button = document.querySelector(`.expand-button[data-user="${user}"]`);
+            const allItems = Array.from(sessionList.querySelectorAll('.session-item'));
+            const hiddenItems = sessionList.querySelectorAll('.session-item.hidden');
+            
+            if (hiddenItems.length > 0) {
+                // Показываем все скрытые элементы
+                hiddenItems.forEach(item => {
+                    item.classList.remove('hidden');
+                });
+                button.textContent = 'Скрыть старые сессии';
+            } else {
+                // Скрываем все кроме последних 5
+                allItems.forEach((item, index) => {
+                    if (index < totalSessions - 5) {
+                        item.classList.add('hidden');
+                    }
+                });
+                button.textContent = `Показать все сессии (${totalSessions})`;
+            }
+        }
+
+        // Инициализация: показываем последние 5 сессий для каждого пользователя
+        document.addEventListener('DOMContentLoaded', function() {
+            const allSessionLists = document.querySelectorAll('.session-list');
+            allSessionLists.forEach(sessionList => {
+                const totalSessions = parseInt(sessionList.getAttribute('data-total'));
+                const allItems = Array.from(sessionList.querySelectorAll('.session-item'));
+                
+                if (totalSessions > 5) {
+                    allItems.forEach((item, index) => {
+                        if (index < totalSessions - 5) {
+                            item.classList.add('hidden');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>

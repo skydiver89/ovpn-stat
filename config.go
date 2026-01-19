@@ -8,11 +8,17 @@ import (
 
 type Config struct {
 	Server Server `yaml:"server"`
+	Auth   Auth   `yaml:"auth"`
 }
 
 type Server struct {
 	Log  string `yaml:"log"`
 	Port string `yaml:"port"`
+}
+
+type Auth struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
 }
 
 func (c *Config) load(fname string) error {

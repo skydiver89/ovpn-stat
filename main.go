@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -52,6 +54,12 @@ func main() {
 	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/images", "./images")
 	router.StaticFile("/favicon.ico", "./images/favicon.ico")
+
+	// Применяем аутентификацию только если указаны username и password
+	if config.Auth.Username != "" && config.Auth.Password != "" {
+		router.Use(authMiddleware())
+	}
+
 	router.GET("/", mainPage)
 	err = router.Run("0.0.0.0:" + config.Server.Port)
 	if err != nil {
@@ -131,6 +139,53 @@ func prepareTemplateData(stat map[string][]timeInterval) TemplateData {
 	}
 
 	return TemplateData{Stats: templateStats}
+}
+
+func authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.GetHeader("Authorization")
+		if auth == "" {
+			c.Header("WWW-Authenticate", `Basic realm="OpenVPN Statistics"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Проверяем формат "Basic base64(username:password)"
+		parts := strings.SplitN(auth, " ", 2)
+		if len(parts) != 2 || parts[0] != "Basic" {
+			c.Header("WWW-Authenticate", `Basic realm="OpenVPN Statistics"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Декодируем base64
+		decoded, err := base64.StdEncoding.DecodeString(parts[1])
+		if err != nil {
+			c.Header("WWW-Authenticate", `Basic realm="OpenVPN Statistics"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Разделяем username:password
+		credentials := strings.SplitN(string(decoded), ":", 2)
+		if len(credentials) != 2 {
+			c.Header("WWW-Authenticate", `Basic realm="OpenVPN Statistics"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		username := credentials[0]
+		password := credentials[1]
+
+		// Проверяем учетные данные
+		if username != config.Auth.Username || password != config.Auth.Password {
+			c.Header("WWW-Authenticate", `Basic realm="OpenVPN Statistics"`)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		c.Next()
+	}
 }
 
 func mainPage(c *gin.Context) {

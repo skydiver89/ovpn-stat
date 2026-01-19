@@ -1,4 +1,8 @@
 server:
   log: server.log
   port: 9999
+
+auth:
+  username: admin
+  password: changeme
   
