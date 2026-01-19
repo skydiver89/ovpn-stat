@@ -37,7 +37,7 @@ Edit ovpn-stat.service. Then:
 
 ```
 sudo cp ovpn-stat.service /etc/systemd/system/ovpn-stat.service
-sudo systemc daemon-reload
-sudo systemc enable ovpn-stat
-sudo systemc start ovpn-stat
+sudo systemctl daemon-reload
+sudo systemctl enable ovpn-stat
+sudo systemctl start ovpn-stat
 ```
