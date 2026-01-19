@@ -53,7 +53,7 @@ func main() {
 	router := gin.Default()
 	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/images", "./images")
-	router.StaticFile("/favicon.ico", "./images/favicon.ico")
+	router.StaticFile("/favicon.png", "./images/favicon.png")
 
 	// Применяем аутентификацию только если указаны username и password
 	if config.Auth.Username != "" && config.Auth.Password != "" {

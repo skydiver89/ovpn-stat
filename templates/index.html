@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenVPN Statistics</title>
-    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <link rel="icon" type="image/png" href="/favicon.png" />
     <style>
         * {
             margin: 0;
@@ -241,7 +241,7 @@
 <body>
     <div class="container">
         <header>
-            <img src="/images/favicon.ico" alt="OpenVPN" class="header-icon">
+            <img src="/images/favicon.png" alt="OpenVPN" class="header-icon">
             <h1>OpenVPN Statistics</h1>
             <p class="subtitle">Мониторинг подключений пользователей</p>
         </header>
@@ -274,13 +274,16 @@
                     </li>
                     {{end}}
                 </ul>
-                {{$totalSessions := len $sessions.Intervals}}
-                {{if gt $totalSessions 5}}
-                <button class="expand-button" onclick="toggleSessions('{{$user}}', {{$totalSessions}})" data-user="{{$user}}">
-                    Показать все сессии ({{$totalSessions}})
+                {{ $totalSessions := len $sessions.Intervals }}
+                {{ if gt $totalSessions 5 }}
+                <button 
+                    class="expand-button" 
+                    data-user="{{ $user }}"
+                    data-total="{{ $totalSessions }}">
+                    Показать все сессии ({{ $totalSessions }})
                 </button>
-                {{end}}
-                <div class="session-count">Всего сессий: {{$totalSessions}}</div>
+                {{ end }}
+                <div class="session-count">Всего сессий: {{ $totalSessions }}</div>
             </div>
             {{end}}
         </div>
@@ -334,6 +337,16 @@
                         }
                     });
                 }
+            });
+
+            // Привязываем обработчики событий к кнопкам расширения
+            const expandButtons = document.querySelectorAll('.expand-button');
+            expandButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const user = this.getAttribute('data-user');
+                    const totalSessions = parseInt(this.getAttribute('data-total'));
+                    toggleSessions(user, totalSessions);
+                });
             });
         });
     </script>
