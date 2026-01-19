@@ -26,8 +26,8 @@ func parseLogLine(logLine string) (time.Time, string, error) {
 		return time.Time{}, "", fmt.Errorf("unknown format")
 	}
 
-	// Парсим дату/время
-	parsedTime, err := time.Parse("2006-01-02 15:04:05", timeStr)
+	// Парсим дату/время в локальном часовом поясе
+	parsedTime, err := time.ParseInLocation("2006-01-02 15:04:05", timeStr, time.Local)
 	if err != nil {
 		return time.Time{}, "", fmt.Errorf("cant parse time: %v", err)
 	}
