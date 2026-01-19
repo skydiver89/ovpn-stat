@@ -4,7 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -47,7 +49,7 @@ func main() {
 	}
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	//router.LoadHTMLGlob("templates/*/*.html")
+	router.LoadHTMLGlob("templates/*.html")
 	router.Static("/images", "./images")
 	router.StaticFile("/favicon.ico", "./images/favicon.ico")
 	router.GET("/", mainPage)
@@ -57,13 +59,82 @@ func main() {
 	}
 }
 
+// TemplateData структуры для шаблона
+type TemplateData struct {
+	Stats map[string]UserSessions
+}
+
+type UserSessions struct {
+	HasActive bool
+	Intervals []SessionInterval
+}
+
+type SessionInterval struct {
+	IsActive       bool
+	StartFormatted string
+	EndFormatted   string
+	Duration       string
+}
+
+func formatDuration(start, end time.Time) string {
+	var duration time.Duration
+	if end.IsZero() {
+		duration = time.Since(start)
+	} else {
+		duration = end.Sub(start)
+	}
+
+	hours := int(duration.Hours())
+	minutes := int(duration.Minutes()) % 60
+	seconds := int(duration.Seconds()) % 60
+
+	if hours > 0 {
+		return fmt.Sprintf("%dч %dм %dс", hours, minutes, seconds)
+	} else if minutes > 0 {
+		return fmt.Sprintf("%dм %dс", minutes, seconds)
+	}
+	return fmt.Sprintf("%dс", seconds)
+}
+
+func formatTime(t time.Time) string {
+	if t.IsZero() {
+		return "—"
+	}
+	return t.Format("02.01.2006 15:04:05")
+}
+
+func prepareTemplateData(stat map[string][]timeInterval) TemplateData {
+	templateStats := make(map[string]UserSessions)
+
+	for user, intervals := range stat {
+		userSessions := UserSessions{
+			Intervals: make([]SessionInterval, 0, len(intervals)),
+		}
+
+		for _, interval := range intervals {
+			isActive := interval.end.IsZero()
+			if isActive {
+				userSessions.HasActive = true
+			}
+
+			sessionInterval := SessionInterval{
+				IsActive:       isActive,
+				StartFormatted: formatTime(interval.start),
+				EndFormatted:   formatTime(interval.end),
+				Duration:       formatDuration(interval.start, interval.end),
+			}
+
+			userSessions.Intervals = append(userSessions.Intervals, sessionInterval)
+		}
+
+		templateStats[user] = userSessions
+	}
+
+	return TemplateData{Stats: templateStats}
+}
+
 func mainPage(c *gin.Context) {
 	stat := readStat()
-	fmt.Println(stat)
-	/*
-		c.HTML(http.StatusOK, "main.html", gin.H{
-			"currentyear": curYear,
-			"srvversion":  GITREV,
-		})
-	*/
+	templateData := prepareTemplateData(stat)
+	c.HTML(http.StatusOK, "index.html", templateData)
 }

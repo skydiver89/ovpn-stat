@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -49,11 +48,5 @@ func readStat() map[string][]timeInterval {
 		log.Fatalln("Error:", err)
 	}
 
-	for user := range stat {
-		fmt.Println(user)
-		for i := range stat[user] {
-			fmt.Println(stat[user][i].start, stat[user][i].end)
-		}
-	}
 	return stat
 }
