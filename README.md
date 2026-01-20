@@ -10,7 +10,7 @@ make
 ```
 
 # Usage  
-If there is no timestamps in your openvpn logs, you should remove *--suppress-timestamps* from openvpn launch command (maybe in */etc/systemd/system/multi-user.target.wants/openvpn-server.service*)  
+If there is no timestamps in your openvpn logs, you should remove *--suppress-timestamps* from openvpn launch command (maybe in */etc/systemd/system/multi-user.target.wants/openvpn-server@server.service*)  
 
 ```
 ovpn-stat [-c configFile] [-h] [-v]
